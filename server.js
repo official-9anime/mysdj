@@ -19,6 +19,8 @@ function parseEnvList(env) {
   }
   return env.split(',');
 }
+const NodeCache = require("node-cache");
+const requestCache = new NodeCache({ stdTTL: 300, checkperiod: 320 }); // Cache for 5 minutes
 
 // Set up rate-limiting to avoid abuse of the public CORS Anywhere server.
 // var checkRateLimit = require('./lib/rate-limit')(process.env.CORSANYWHERE_RATELIMIT);
@@ -47,6 +49,30 @@ cors_proxy.createServer({
   httpProxyOptions: {
     // Do not add X-Forwarded-For, etc. headers, because Heroku already adds it.
     xfwd: false,
+  },
+  interceptResponse: function(req, res, proxyRes) {
+    const urlKey = `${req.method}:${req.url}`;
+
+    // Check if the request is cached
+    if (requestCache.has(urlKey)) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(requestCache.get(urlKey));
+      return true; // Skip proxying
+    }
+
+    let body = '';
+    proxyRes.on('data', chunk => (body += chunk));
+    proxyRes.on('end', () => {
+      try {
+        // Store the response in cache
+        requestCache.set(urlKey, body);
+        res.end(body);
+      } catch (err) {
+        console.error("Error caching response:", err);
+        res.end(body);
+      }
+    });
+    return false; // Continue with proxy
   },
 }).listen(port, host, function() {
   console.log('Running CORS Anywhere on ' + host + ':' + port);
