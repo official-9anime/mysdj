@@ -1,11 +1,7 @@
 // Listen on a specific host via the HOST environment variable
-process.env.PORT = process.env.PORT || '8080';
-process.env.HOST = process.env.HOST || '0.0.0.0';
-process.env.CORSANYWHERE_WHITELIST = process.env.CORSANYWHERE_WHITELIST || 'https://gogoanime.me.uk,http://gogoanime.me.uk,http://gogoanime.me.uk:8080,https://kbergetar.us,http://kbergetar.us,http://kbergetar.us:8080';
-process.env.CORSANYWHERE_BLACKLIST = process.env.CORSANYWHERE_BLACKLIST || '';
-
-var host = process.env.HOST;
-var port = process.env.PORT;
+var host = process.env.HOST || '0.0.0.0';
+// Listen on a specific port via the PORT environment variable
+var port = process.env.PORT || 8080;
 
 // Grab the blacklist from the command-line so that we can update the blacklist without deploying
 // again. CORS Anywhere is open by design, and this blacklist is not used, except for countering
@@ -19,6 +15,7 @@ function parseEnvList(env) {
   }
   return env.split(',');
 }
+
 
 // Set up rate-limiting to avoid abuse of the public CORS Anywhere server.
 // var checkRateLimit = require('./lib/rate-limit')(process.env.CORSANYWHERE_RATELIMIT);
